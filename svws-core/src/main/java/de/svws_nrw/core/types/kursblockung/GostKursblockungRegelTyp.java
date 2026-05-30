@@ -238,6 +238,15 @@ public enum GostKursblockungRegelTyp {
 			GostKursblockungRegelParameterTyp.FACH_ID,
 			GostKursblockungRegelParameterTyp.KURSART,
 			GostKursblockungRegelParameterTyp.GANZZAHL
+	)),
+
+	/**
+	 * Der Regel-Typ(19) zum Begrenzen der Anzahl an Kurswechseln von AB3-Fachwahlen gegenüber dem aktiven Ergebnis.
+	 * <br>- Parameter A: Die maximal erlaubte Anzahl an Kurswechseln.
+	 *       Gültige Werte sind im Intervall {#KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MIN} und {#KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MAX}.
+	 */
+	KURSWECHSEL_AB3_MAXIMALE_ANZAHL(19, "Kurswechsel AB3: Maximale Anzahl", Arrays.asList(
+			GostKursblockungRegelParameterTyp.GANZZAHL
 	));
 
 	/** Liefert den kleinsten Wert (inklusive) für Regel 9. */
@@ -258,9 +267,15 @@ public enum GostKursblockungRegelTyp {
 	/** Liefert den größten Wert (inklusive) für Regel 18. */
 	public static final int FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE_MAX = 9;
 
+	/** Liefert den kleinsten Wert (inklusive) für Regel 19. */
+	public static final int KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MIN = 0;
+
+	/** Liefert den größten Wert (inklusive) für Regel 19. */
+	public static final int KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MAX = 999;
+
 
 	/** Definiert eine Reihenfolge der Regel-Typen bei visuellen Darstellungen. */
-	public static final @NotNull int[] ANZEIGE_REIHENFOLGE = new int[] { 1, 6, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 };
+	public static final @NotNull int[] ANZEIGE_REIHENFOLGE = new int[] { 1, 6, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 };
 
 	/** Die ID des Regel-Typs */
 	public final int typ;

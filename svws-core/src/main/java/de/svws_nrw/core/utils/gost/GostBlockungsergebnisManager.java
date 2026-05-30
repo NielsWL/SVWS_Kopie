@@ -4982,6 +4982,24 @@ public class GostBlockungsergebnisManager {
 	}
 
 	/**
+	 * Liefert alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um die maximale Anzahl von AB3-Kurswechseln zu begrenzen.
+	 *
+	 * @param anzahl  Die maximale Anzahl erlaubter AB3-Kurswechsel.
+	 *
+	 * @return alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um die maximale Anzahl von AB3-Kurswechseln zu begrenzen.
+	 */
+	public @NotNull GostBlockungRegelUpdate regelupdateCreate_19_KURSWECHSEL_AB3_MAXIMALE_ANZAHL(final int anzahl) {
+		final @NotNull GostBlockungRegelUpdate u = new GostBlockungRegelUpdate();
+
+		for (final @NotNull GostBlockungRegel r19 : parent.regelGetListeOfTyp(GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL)) {
+			u.listEntfernen.add(r19);
+		}
+
+		u.listHinzuzufuegen.add(DTOUtils.newGostBlockungRegel1(GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL.typ, anzahl));
+		return u;
+	}
+
+	/**
 	 * Liefert alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um alle Regeln einer Schülermenge zu entfernen.
 	 *
 	 * @param setSchuelerID  Die Menge der Schüler-IDs.
@@ -5646,6 +5664,36 @@ public class GostBlockungsergebnisManager {
 		// (4)
 		GostBlockungsergebnisManager.regelupdateAppend(u, regelupdateCreate_17_KURS_KURSDIFFERENZ_BEI_DER_VISUALISIERUNG_IGNORIEREN(SetUtils.create1(idKursNeu)));
 		// Falls die Regel bereits durch Kaskaden gelöscht werden soll, dann entferne sie nicht doppelt.
+		if (!u.listEntfernen.contains(rAlt)) {
+			u.listEntfernen.add(rAlt);
+		}
+
+		return u;
+	}
+
+	/**
+	 * Liefert alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um die maximale Anzahl von AB3-Kurswechseln zu patchen.
+	 *
+	 * @param idRegelAlt  Die ID der alten zu modifizierenden Regel.
+	 * @param anzahl      Die maximale Anzahl erlaubter AB3-Kurswechsel.
+	 *
+	 * @return alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um die maximale Anzahl von AB3-Kurswechseln zu patchen.
+	 */
+	public @NotNull GostBlockungRegelUpdate regelupdatePatchByID_19_KURSWECHSEL_AB3_MAXIMALE_ANZAHL(final long idRegelAlt, final int anzahl) {
+		final @NotNull GostBlockungRegelUpdate u = new GostBlockungRegelUpdate();
+
+		final @NotNull GostBlockungRegel rAlt = parent.regelGet(idRegelAlt);
+		if (rAlt.typ != GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL.typ) {
+			return u;
+		}
+
+		final @NotNull LongArrayKey kNeu = new LongArrayKey(new long[] { GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL.typ, anzahl });
+		final GostBlockungRegel rNeu = parent.regelGetByLongArrayKeyOrNull(kNeu);
+		if (rNeu != null) {
+			return u;
+		}
+
+		GostBlockungsergebnisManager.regelupdateAppend(u, regelupdateCreate_19_KURSWECHSEL_AB3_MAXIMALE_ANZAHL(anzahl));
 		if (!u.listEntfernen.contains(rAlt)) {
 			u.listEntfernen.add(rAlt);
 		}

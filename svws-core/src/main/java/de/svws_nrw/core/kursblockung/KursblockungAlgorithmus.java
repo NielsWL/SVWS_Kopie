@@ -132,6 +132,10 @@ public final class KursblockungAlgorithmus extends Service {
 			dynDaten.aktionZustandSpeichernG();
 		}
 
+		if (!dynDaten.gibErfuelltMaxKurswechselAB3()) {
+			return;
+		}
+
 		// Aktuellen Stand der Blockung speichern.
 		final @NotNull GostBlockungsergebnisManager out = dynDaten.gibErzeugtesKursblockungOutput(pInput, outputs.size() + 1L);
 		outputs.add(out);

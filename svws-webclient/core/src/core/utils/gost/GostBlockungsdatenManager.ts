@@ -1915,6 +1915,15 @@ export class GostBlockungsdatenManager extends JavaObject {
 				}
 				break;
 			}
+			case GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL: {
+				if (p.get(0) < GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MIN) {
+					return this.toStringRegel(r.id) + " KURSWECHSEL_AB3_MAXIMALE_ANZAHL ist mit " + p.get(0) + " zu klein!";
+				}
+				if (p.get(0) > GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MAX) {
+					return this.toStringRegel(r.id) + " KURSWECHSEL_AB3_MAXIMALE_ANZAHL ist mit " + p.get(0) + " zu groß!";
+				}
+				break;
+			}
 			default: {
 				return this.toStringRegel(r.id) + " Regeltypüberprüfung: Der Regeltyp ist unbekannt!";
 			}

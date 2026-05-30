@@ -168,6 +168,12 @@ export class GostKursblockungRegelTyp extends JavaEnum<GostKursblockungRegelTyp>
 	public static readonly FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE: GostKursblockungRegelTyp = new GostKursblockungRegelTyp("FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE", 18, 18, "Fachart: Maximale Anzahl pro Schiene", Arrays.asList(GostKursblockungRegelParameterTyp.FACH_ID, GostKursblockungRegelParameterTyp.KURSART, GostKursblockungRegelParameterTyp.GANZZAHL));
 
 	/**
+	 *  Der Regel-Typ(19) zum Begrenzen der Anzahl an Kurswechseln von AB3-Fachwahlen gegenüber dem aktiven Ergebnis.
+	 *  <br>- Parameter A: Die maximal erlaubte Anzahl an Kurswechseln.
+	 */
+	public static readonly KURSWECHSEL_AB3_MAXIMALE_ANZAHL: GostKursblockungRegelTyp = new GostKursblockungRegelTyp("KURSWECHSEL_AB3_MAXIMALE_ANZAHL", 19, 19, "Kurswechsel AB3: Maximale Anzahl", Arrays.asList(GostKursblockungRegelParameterTyp.GANZZAHL));
+
+	/**
 	 * Liefert den kleinsten Wert (inklusive) für Regel 9.
 	 */
 	public static readonly KURS_MIT_DUMMY_SUS_AUFFUELLEN_MIN: number = 1;
@@ -198,9 +204,19 @@ export class GostKursblockungRegelTyp extends JavaEnum<GostKursblockungRegelTyp>
 	public static readonly FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE_MAX: number = 9;
 
 	/**
+	 * Liefert den kleinsten Wert (inklusive) für Regel 19.
+	 */
+	public static readonly KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MIN: number = 0;
+
+	/**
+	 * Liefert den größten Wert (inklusive) für Regel 19.
+	 */
+	public static readonly KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MAX: number = 999;
+
+	/**
 	 * Definiert eine Reihenfolge der Regel-Typen bei visuellen Darstellungen.
 	 */
-	public static readonly ANZEIGE_REIHENFOLGE: Array<number> = [1, 6, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+	public static readonly ANZEIGE_REIHENFOLGE: Array<number> = [1, 6, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 
 	/**
 	 * Die ID des Regel-Typs

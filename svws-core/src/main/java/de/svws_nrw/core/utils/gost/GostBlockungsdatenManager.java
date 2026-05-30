@@ -2001,6 +2001,16 @@ public class GostBlockungsdatenManager {
 				}
 				break;
 
+			// Der Wert wird überprüft.
+			case KURSWECHSEL_AB3_MAXIMALE_ANZAHL:  // 19
+				if (p.get(0) < GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MIN) {
+					return toStringRegel(r.id) + " KURSWECHSEL_AB3_MAXIMALE_ANZAHL ist mit " + p.get(0) + " zu klein!";
+				}
+				if (p.get(0) > GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MAX) {
+					return toStringRegel(r.id) + " KURSWECHSEL_AB3_MAXIMALE_ANZAHL ist mit " + p.get(0) + " zu groß!";
+				}
+				break;
+
 			default:
 				return toStringRegel(r.id) + " Regeltypüberprüfung: Der Regeltyp ist unbekannt!";
 		}
