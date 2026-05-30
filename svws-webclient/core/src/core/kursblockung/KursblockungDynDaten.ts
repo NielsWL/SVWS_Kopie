@@ -108,6 +108,11 @@ export class KursblockungDynDaten extends JavaObject {
 	 */
 	private readonly statistik: KursblockungDynStatistik;
 
+	/**
+	 * Maximale Anzahl erlaubter AB3-Kurswechsel gegenüber expliziten AB3-Definitionsregeln, oder Number.MAX_SAFE_INTEGER ohne Begrenzung.
+	 */
+	private regel19MaxKurswechselAB3: number = 0;
+
 
 	/**
 	 * Der Konstruktor der Klasse liest alle Daten von {@link GostBlockungsdatenManager} ein und baut die relevanten Datenstrukturen auf.
@@ -131,6 +136,7 @@ export class KursblockungDynDaten extends JavaObject {
 		this.schuelerMenge = Array(0).fill(null);
 		this.schuelerMap = new HashMap();
 		this.statistik = new KursblockungDynStatistik(this.log);
+		this.regel19MaxKurswechselAB3 = Number.MAX_SAFE_INTEGER;
 		this.fehlerBeiReferenzen(input);
 		this.fehlerBeiRegelGruppierung(input.daten().regeln);
 		this.fehlerBeiSchuelerErstellung(input);
@@ -149,6 +155,7 @@ export class KursblockungDynDaten extends JavaObject {
 		this.fehlerBeiRegel15();
 		this.fehlerBeiRegel16();
 		this.fehlerBeiRegel18();
+		this.fehlerBeiRegel19();
 		this.aktionZustandSpeichernS();
 		this.aktionZustandSpeichernK();
 		this.aktionZustandSpeichernG();
@@ -293,6 +300,14 @@ export class KursblockungDynDaten extends JavaObject {
 				}
 				case GostKursblockungRegelTyp.FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE: {
 					KursblockungDynDaten.fehlerBeiReferenzenRegeltyp18(daten, setFaecher, setKursarten);
+					break;
+				}
+				case GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL: {
+					KursblockungDynDaten.fehlerBeiReferenzenRegeltyp19(daten);
+					break;
+				}
+				case GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS: {
+					KursblockungDynDaten.fehlerBeiReferenzenRegeltyp20(daten, setSchueler, setKurse);
 					break;
 				}
 				default: {
@@ -458,6 +473,23 @@ export class KursblockungDynDaten extends JavaObject {
 		DeveloperNotificationException.ifSetNotContains(JavaString.format("FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE(%d, %d, %d): Kursart nicht vorhanden!", fachID, kursartID, maximum), setKursarten, kursartID);
 		DeveloperNotificationException.ifSmaller(JavaString.format("FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE(%d, %d, %d): Anzahl ist zu klein!", fachID, kursartID, maximum), maximum, GostKursblockungRegelTyp.FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE_MIN);
 		DeveloperNotificationException.ifGreater(JavaString.format("FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE(%d, %d, %d): Anzahl ist zu groß!", fachID, kursartID, maximum), maximum, GostKursblockungRegelTyp.FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE_MAX);
+	}
+
+	private static fehlerBeiReferenzenRegeltyp19(daten: Array<number>): void {
+		KursblockungDynDaten.ueberpruefeDatenLaenge("KURSWECHSEL_AB3_MAXIMALE_ANZAHL", daten, 1);
+		const maximum: number = daten[0];
+		DeveloperNotificationException.ifSmaller(JavaString.format("KURSWECHSEL_AB3_MAXIMALE_ANZAHL(%d): Anzahl ist zu klein!", maximum), maximum, GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MIN);
+		DeveloperNotificationException.ifGreater(JavaString.format("KURSWECHSEL_AB3_MAXIMALE_ANZAHL(%d): Anzahl ist zu groß!", maximum), maximum, GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MAX);
+	}
+
+	private static fehlerBeiReferenzenRegeltyp20(daten: Array<number>, setSchueler: HashSet<number>, setKurse: HashSet<number>): void {
+		KursblockungDynDaten.ueberpruefeDatenLaenge("SCHUELER_DEFINIERE_ABITURFACH_IN_KURS", daten, 3);
+		const schuelerID: number = daten[0].valueOf();
+		const kursID: number = daten[1].valueOf();
+		const abiturfach: number = daten[2];
+		DeveloperNotificationException.ifSetNotContains(JavaString.format("SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(%d, %d, %d): Schüler-ID nicht vorhanden!", schuelerID, kursID, abiturfach), setSchueler, schuelerID);
+		DeveloperNotificationException.ifSetNotContains(JavaString.format("SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(%d, %d, %d): Kurs-ID nicht vorhanden!", schuelerID, kursID, abiturfach), setKurse, kursID);
+		DeveloperNotificationException.ifTrue(JavaString.format("SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(%d, %d, %d): Abiturfach muss 3 oder 4 sein!", schuelerID, kursID, abiturfach), (abiturfach !== 3) && (abiturfach !== 4));
 	}
 
 	private fehlerBeiRegelGruppierung(pRegeln: List<GostBlockungRegel>): void {
@@ -853,6 +885,33 @@ export class KursblockungDynDaten extends JavaObject {
 			const maximalProSchiene: number = r18.parameter.get(2);
 			const fachart: KursblockungDynFachart = this.gibFachart(idFach, idKursart);
 			fachart.setzeMaxAnzahlProSchiene(maximalProSchiene);
+		}
+	}
+
+	private fehlerBeiRegel19(): void {
+		for (const r19 of MapUtils.getOrCreateArrayList(this.regelMap, GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL))
+			this.regel19MaxKurswechselAB3 = Math.min(this.regel19MaxKurswechselAB3, r19.parameter.get(0));
+		if (this.regel19MaxKurswechselAB3 === Number.MAX_SAFE_INTEGER)
+			return;
+		const ab3Definitionen: ArrayList<GostBlockungRegel> = new ArrayList();
+		for (const r20 of MapUtils.getOrCreateArrayList(this.regelMap, GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS))
+			if (r20.parameter.get(2) === 3)
+				ab3Definitionen.add(r20);
+		const perm: Array<number> = KursblockungStatic.gibPermutation(this.rnd, ab3Definitionen.size());
+		for (let i: number = this.regel19MaxKurswechselAB3; i < ab3Definitionen.size(); i++) {
+			const definition: GostBlockungRegel = ab3Definitionen.get(perm[i]);
+			this.setzeSchuelerFixierungInKurs(definition.parameter.get(0), definition.parameter.get(1));
+		}
+	}
+
+	private setzeSchuelerFixierungInKurs(schuelerID: number, kursID: number): void {
+		const schueler: KursblockungDynSchueler = this.gibSchueler(schuelerID);
+		const fixierterKurs: KursblockungDynKurs = this.gibKurs(kursID);
+		for (const kurs of fixierterKurs.gibFachart().gibKurse()) {
+			if (kurs === fixierterKurs)
+				kurs.setzeSchuelerFixierung(schueler.internalSchuelerID);
+			else
+				schueler.aktionSetzeKursSperrung(kurs.gibInternalID());
 		}
 	}
 

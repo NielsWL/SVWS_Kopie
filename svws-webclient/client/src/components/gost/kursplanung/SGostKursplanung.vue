@@ -250,6 +250,7 @@
 			result.push({ text: "Fixiere alle Schüler", action: async () => await props.regelnUpdate(props.getErgebnismanager().regelupdateCreate_04c_SCHUELER_FIXIEREN_IN_ALLEN_KURSEN()) });
 			result.push({ text: "Löse alle fixierten Schüler", action: async () => await props.regelnUpdate(props.getErgebnismanager().regelupdateRemove_04c_SCHUELER_FIXIEREN_IN_ALLEN_KURSEN()) });
 			if (hatAbiturkurse) {
+				result.push({ text: "Definiere aktuelle AB3/AB4-Kurszuordnung", action: async () => await props.regelnUpdate(props.getErgebnismanager().regelupdateCreate_20_SCHUELER_DEFINIERE_ABITURFACH_IN_KURS_AKTUELLE_ZUORDNUNG()) });
 				result.push({ text: "Fixiere alle Schüler mit Abiturkursen", action: async () => await props.regelnUpdate(props.getErgebnismanager().regelupdateCreate_04i_SCHUELER_FIXIEREN_TYP_AB()) });
 				result.push({ text: "Fixiere alle Schüler in Leistungskursen", action: async () => await props.regelnUpdate(props.getErgebnismanager().regelupdateCreate_04e_SCHUELER_FIXIEREN_TYP_LK()) });
 				result.push({ text: "Fixiere alle Schüler im dritten Abiturfach", action: async () => await props.regelnUpdate(props.getErgebnismanager().regelupdateCreate_04f_SCHUELER_FIXIEREN_TYP_AB3()) });

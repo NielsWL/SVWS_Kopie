@@ -4432,6 +4432,56 @@ export class GostBlockungsergebnisManager extends JavaObject {
 	}
 
 	/**
+	 * Liefert alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um die maximale Anzahl von AB3-Kurswechseln zu begrenzen.
+	 *
+	 * @param anzahl  Die maximale Anzahl erlaubter AB3-Kurswechsel.
+	 *
+	 * @return alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um die maximale Anzahl von AB3-Kurswechseln zu begrenzen.
+	 */
+	public regelupdateCreate_19_KURSWECHSEL_AB3_MAXIMALE_ANZAHL(anzahl: number): GostBlockungRegelUpdate {
+		const u: GostBlockungRegelUpdate = new GostBlockungRegelUpdate();
+		for (const r19 of this.parent.regelGetListeOfTyp(GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL))
+			u.listEntfernen.add(r19);
+		u.listHinzuzufuegen.add(DTOUtils.newGostBlockungRegel1(GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL.typ, anzahl));
+		return u;
+	}
+
+	/**
+	 * Liefert alle nötigen Veränderungen, um eine AB3/AB4-Schüler-Kurs-Zuordnung als Definitionsregel festzuhalten.
+	 *
+	 * @param idSchueler  Die ID des Schülers.
+	 * @param idKurs      Die ID des Kurses.
+	 * @param abiturfach  Die Abiturfach-Nummer (3 oder 4).
+	 *
+	 * @return alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt
+	 */
+	public regelupdateCreate_20_SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(idSchueler: number, idKurs: number, abiturfach: number): GostBlockungRegelUpdate {
+		const u: GostBlockungRegelUpdate = new GostBlockungRegelUpdate();
+		u.listHinzuzufuegen.add(DTOUtils.newGostBlockungRegel3(GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS.typ, idSchueler, idKurs, abiturfach));
+		return u;
+	}
+
+	/**
+	 * Liefert alle nötigen Veränderungen, um die aktuellen AB3/AB4-Schüler-Kurs-Zuordnungen als Definitionsregeln festzuhalten.
+	 * Bestehende Definitionsregeln werden vorher entfernt, damit die Bezugsbasis eindeutig ist.
+	 *
+	 * @return alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt
+	 */
+	public regelupdateCreate_20_SCHUELER_DEFINIERE_ABITURFACH_IN_KURS_AKTUELLE_ZUORDNUNG(): GostBlockungRegelUpdate {
+		const u: GostBlockungRegelUpdate = new GostBlockungRegelUpdate();
+		for (const r20 of this.parent.regelGetListeOfTyp(GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS))
+			u.listEntfernen.add(r20);
+		for (const idKurs of this.kursIDs) {
+			for (const idSchueler of this.getOfKursSchuelerIDmenge(idKurs)) {
+				const abiturfach: number = this.getOfSchuelerOfKursAbiturfach(idSchueler, idKurs);
+				if ((abiturfach === 3) || (abiturfach === 4))
+					u.listHinzuzufuegen.add(DTOUtils.newGostBlockungRegel3(GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS.typ, idSchueler, idKurs, abiturfach));
+			}
+		}
+		return u;
+	}
+
+	/**
 	 * Liefert alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um alle Regeln einer Schülermenge zu entfernen.
 	 *
 	 * @param setSchuelerID  Die Menge der Schüler-IDs.
@@ -4952,6 +5002,29 @@ export class GostBlockungsergebnisManager extends JavaObject {
 		if (!u.listEntfernen.contains(rAlt)) {
 			u.listEntfernen.add(rAlt);
 		}
+		return u;
+	}
+
+	/**
+	 * Liefert alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um die maximale Anzahl von AB3-Kurswechseln zu patchen.
+	 *
+	 * @param idRegelAlt  Die ID der alten zu modifizierenden Regel.
+	 * @param anzahl      Die maximale Anzahl erlaubter AB3-Kurswechsel.
+	 *
+	 * @return alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um die maximale Anzahl von AB3-Kurswechseln zu patchen.
+	 */
+	public regelupdatePatchByID_19_KURSWECHSEL_AB3_MAXIMALE_ANZAHL(idRegelAlt: number, anzahl: number): GostBlockungRegelUpdate {
+		const u: GostBlockungRegelUpdate = new GostBlockungRegelUpdate();
+		const rAlt: GostBlockungRegel = this.parent.regelGet(idRegelAlt);
+		if (rAlt.typ !== GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL.typ)
+			return u;
+		const kNeu: LongArrayKey = new LongArrayKey([GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL.typ, anzahl]);
+		const rNeu: GostBlockungRegel | null = this.parent.regelGetByLongArrayKeyOrNull(kNeu);
+		if (rNeu !== null)
+			return u;
+		GostBlockungsergebnisManager.regelupdateAppend(u, this.regelupdateCreate_19_KURSWECHSEL_AB3_MAXIMALE_ANZAHL(anzahl));
+		if (!u.listEntfernen.contains(rAlt))
+			u.listEntfernen.add(rAlt);
 		return u;
 	}
 

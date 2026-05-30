@@ -133,6 +133,36 @@
 				</template>
 			</template>
 		</BlockungsregelBase>
+		<!-- Regeltyp 19  -->
+		<BlockungsregelBase v-model="regel" :regel-typ="GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL" :get-datenmanager :get-ergebnismanager :api-status :nur-regelverletzungen
+			:regel-hinzufuegen="regelHinzufuegen_19" :regel-speichern :regel-entfernen :disabled :columns="[ {key: 'kursart', label: 'Kurswechsel AB3'}, {key: 'anzahl', label: 'maximale Anzahl' }, ]">
+			<template #regelRead="{ regel: r }">
+				<div class="svws-ui-td" role="cell"> AB3 </div>
+				<div class="svws-ui-td" role="cell"> {{ r.parameter.get(0) }} </div>
+			</template>
+			<template #regelEdit>
+				<template v-if="regel !== undefined">
+					<div class="svws-ui-td" role="cell"> AB3 </div>
+					<svws-ui-input-number placeholder="maximale Anzahl" v-model="regelParameterAnzahlSuS" :min="0" :max="999" />
+				</template>
+			</template>
+		</BlockungsregelBase>
+		<!-- Regeltyp 20  -->
+		<BlockungsregelBase v-model="regel" :regel-typ="GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS" :get-datenmanager :get-ergebnismanager :api-status :nur-regelverletzungen
+			:regel-hinzufuegen="regelHinzufuegen_20" :regel-speichern :regel-entfernen :disabled :columns="[ {key: 'schueler', label: 'Schüler definiert'}, {key: 'kurs', label: 'in Kurs'}, {key: 'abiturfach', label: 'Abiturfach'}, ]">
+			<template #regelRead="{ regel: r }">
+				<div class="svws-ui-td" role="cell"> {{ getSchuelerName(r.parameter.get(0)) }} </div>
+				<div class="svws-ui-td" role="cell"> {{ getKursbezeichnung(r.parameter.get(1)) }} </div>
+				<div class="svws-ui-td" role="cell"> AB{{ r.parameter.get(2) }} </div>
+			</template>
+			<template #regelEdit>
+				<template v-if="regel !== undefined">
+					<svws-ui-select v-model="regelParameterSchueler(regel, 0).value" :items="schueler" :item-text="i => `${i.nachname}, ${i.vorname}`" :item-filter="(items, search) => items.filter(i => i.vorname.toLocaleLowerCase().includes(search.toLocaleLowerCase()) || i.nachname.toLocaleLowerCase().includes(search.toLocaleLowerCase()))" autocomplete />
+					<svws-ui-select v-model="regelParameterKurs(regel, 1).value" :items="kurse" :item-text="i => getErgebnismanager().getOfKursName(i.id)" />
+					<svws-ui-input-number placeholder="Abiturfach" v-model="regelParameter(regel, 2).value" :min="3" :max="4" />
+				</template>
+			</template>
+		</BlockungsregelBase>
 		<!-- Regeltyp 4  -->
 		<BlockungsregelBase v-model="regel" :regel-typ="GostKursblockungRegelTyp.SCHUELER_FIXIEREN_IN_KURS" :get-datenmanager :get-ergebnismanager :api-status :nur-regelverletzungen
 			:regel-hinzufuegen="regelHinzufuegen_04" :regel-speichern :regel-entfernen :disabled :columns="[ {key: 'schueler', label: 'Schüler fixiert'}, {key: 'in', label: 'in Kurs'}, ]">
@@ -342,6 +372,25 @@
 		r.parameter.add(faecher.value.getFirst().id);
 		r.parameter.add(1);
 		r.parameter.add(1);
+		regel.value = r;
+	}
+
+	function regelHinzufuegen_19() {
+		const r = new GostBlockungRegel();
+		r.typ = GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL.typ;
+		r.parameter.add(0);
+		regel.value = r;
+	}
+
+	function regelHinzufuegen_20() {
+		if ((schueler.value.size() < 1) || (kurse.value.size() < 1)) {
+			return;
+		}
+		const r = new GostBlockungRegel();
+		r.typ = GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS.typ;
+		r.parameter.add(schueler.value.getFirst().id);
+		r.parameter.add(kurse.value.getFirst().id);
+		r.parameter.add(3);
 		regel.value = r;
 	}
 
@@ -603,6 +652,13 @@
 					return props.getErgebnismanager().regelupdateCreate_17_KURS_KURSDIFFERENZ_BEI_DER_VISUALISIERUNG_IGNORIEREN(SetUtils.create1(p.get(0)));
 				case GostKursblockungRegelTyp.FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE.typ:
 					return props.getErgebnismanager().regelupdateCreate_18_FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE(p.get(0), p.get(1), p.get(2));
+				case GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL.typ:
+					if (regel.value.id > 0) {
+						return props.getErgebnismanager().regelupdatePatchByID_19_KURSWECHSEL_AB3_MAXIMALE_ANZAHL(regel.value.id, p.get(0));
+					}
+					return props.getErgebnismanager().regelupdateCreate_19_KURSWECHSEL_AB3_MAXIMALE_ANZAHL(p.get(0));
+				case GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS.typ:
+					return props.getErgebnismanager().regelupdateCreate_20_SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(p.get(0), p.get(1), p.get(2));
 				default:
 					throw new DeveloperNotificationException('Es kann keine leere Regel erstellt werden');
 			}
@@ -661,6 +717,11 @@
 				regel.value.parameter.set(2, value);
 			}
 		},
+	});
+
+	const regelParameter = (regel: GostBlockungRegel, parameter: number) => computed<number>({
+		get: () => regel.parameter.get(parameter),
+		set: (value) => regel.parameter.set(parameter, value),
 	});
 
 	const regelParameterKursart = (regel: GostBlockungRegel, parameter: number) => computed<GostKursart>({

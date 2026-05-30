@@ -238,6 +238,28 @@ public enum GostKursblockungRegelTyp {
 			GostKursblockungRegelParameterTyp.FACH_ID,
 			GostKursblockungRegelParameterTyp.KURSART,
 			GostKursblockungRegelParameterTyp.GANZZAHL
+	)),
+
+	/**
+	 * Der Regel-Typ(19) zum Begrenzen der Anzahl an Kurswechseln von AB3-Fachwahlen gegenüber expliziten AB3-Definitionsregeln.
+	 * <br>- Parameter A: Die maximal erlaubte Anzahl an Kurswechseln.
+	 *       Gültige Werte sind im Intervall {#KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MIN} und {#KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MAX}.
+	 */
+	KURSWECHSEL_AB3_MAXIMALE_ANZAHL(19, "Kurswechsel AB3: Maximale Anzahl", Arrays.asList(
+			GostKursblockungRegelParameterTyp.GANZZAHL
+	)),
+
+	/**
+	 * Der Regel-Typ(20) zum Definieren der ursprünglichen AB3/AB4-Zuordnung eines Schülers zu einem Kurs.
+	 * Diese Definition dient als Bezugsbasis für Regeln, die Kurswechsel zählen.
+	 * <br>- Parameter A: Datenbank-ID des Schülers (long)
+	 * <br>- Parameter B: Datenbank-ID des Kurses (long)
+	 * <br>- Parameter C: Abiturfach-Nummer (3 = AB3, 4 = AB4)
+	 */
+	SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(20, "Schüler: Definiere Abiturfach in Kurs", Arrays.asList(
+			GostKursblockungRegelParameterTyp.SCHUELER_ID,
+			GostKursblockungRegelParameterTyp.KURS_ID,
+			GostKursblockungRegelParameterTyp.GANZZAHL
 	));
 
 	/** Liefert den kleinsten Wert (inklusive) für Regel 9. */
@@ -258,9 +280,15 @@ public enum GostKursblockungRegelTyp {
 	/** Liefert den größten Wert (inklusive) für Regel 18. */
 	public static final int FACH_KURSART_MAXIMALE_ANZAHL_PRO_SCHIENE_MAX = 9;
 
+	/** Liefert den kleinsten Wert (inklusive) für Regel 19. */
+	public static final int KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MIN = 0;
+
+	/** Liefert den größten Wert (inklusive) für Regel 19. */
+	public static final int KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MAX = 999;
+
 
 	/** Definiert eine Reihenfolge der Regel-Typen bei visuellen Darstellungen. */
-	public static final @NotNull int[] ANZEIGE_REIHENFOLGE = new int[] { 1, 6, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 };
+	public static final @NotNull int[] ANZEIGE_REIHENFOLGE = new int[] { 1, 6, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
 
 	/** Die ID des Regel-Typs */
 	public final int typ;
