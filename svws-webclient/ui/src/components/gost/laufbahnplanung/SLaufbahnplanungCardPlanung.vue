@@ -70,6 +70,23 @@
 		<template #dataFooter>
 			<div role="row" class="svws-ui-tr">
 				<div role="rowheader" class="svws-ui-td font-bold svws-align-right col-span-5 svws-divider gap-1">
+					<span>Fächer</span>
+					<svws-ui-tooltip>
+						<span class="icon i-ri-question-line -m-0.5 mx-0.5" />
+						<template #content>
+							Die Anzahl der belegten Fächer im jeweiligen Halbjahr.
+						</template>
+					</svws-ui-tooltip>
+				</div>
+				<div role="cell" class="svws-ui-td svws-align-center svws-no-padding items-center!" v-for="hj in GostHalbjahr.values()" :key="hj.id" :class="{'svws-divider': (hj.id === 1 || hj.id === 5)}">
+					<span class="inline-flex justify-center items-center font-bold py-0.5 px-1.5 rounded-sm w-full m-0.5">
+						{{ manager.getFachanzahl(hj) }}
+					</span>
+				</div>
+				<div role="cell" class="svws-ui-td svws-align-center" />
+			</div>
+			<div role="row" class="svws-ui-tr">
+				<div role="rowheader" class="svws-ui-td font-bold svws-align-right col-span-5 svws-divider gap-1">
 					<span>Kurse</span>
 					<svws-ui-tooltip>
 						<span class="icon i-ri-question-line -m-0.5 mx-0.5" />

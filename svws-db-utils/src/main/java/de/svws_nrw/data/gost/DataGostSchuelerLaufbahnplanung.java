@@ -1059,6 +1059,15 @@ public final class DataGostSchuelerLaufbahnplanung extends DataManagerRevised<Lo
 	}
 
 
+	private static int[] getFachanzahlHalbjahre(final AbiturdatenManager abiManager, final Abiturdaten abidaten) {
+		final int[] result = new int[GostHalbjahr.maxHalbjahre];
+		for (final GostHalbjahr halbjahr : GostHalbjahr.values()) {
+			result[halbjahr.id] = abiManager.zaehleBelegungInHalbjahren(abidaten.fachbelegungen, halbjahr);
+		}
+		return result;
+	}
+
+
 	/**
 	 * Führt eine Belegprüfung für alles Schüler des angebenen Abitur-Jahrgangs durch
 	 * und gibt die Belegprüfungsergebnisse für die Schüler zurück.
@@ -1115,6 +1124,7 @@ public final class DataGostSchuelerLaufbahnplanung extends DataManagerRevised<Lo
 					new AbiturdatenManager(SVWSKonfiguration.get().getServerMode(), abidaten, jahrgangsdaten, faecherManager, pruefungsArt);
 			ergebnisse.ergebnis = abiManager.getBelegpruefungErgebnis();
 			ergebnisse.hatFachwahlen = abiManager.existsFachbelegung();
+			ergebnisse.fachanzahlHalbjahre = getFachanzahlHalbjahre(abiManager, abidaten);
 			ergebnisse.beratungsDatum = (gostSchueler == null) ? null : gostSchueler.DatumBeratung;
 			ergebnisse.ruecklaufDatum = (gostSchueler == null) ? null : gostSchueler.DatumRuecklauf;
 

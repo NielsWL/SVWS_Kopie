@@ -34,6 +34,7 @@ export class RouteGostLaufbahnfehler extends RouteNode<RouteDataGostLaufbahnfehl
 			new ConfigElement("gost.laufbahnfehler.filterExterne", "user", "false"),
 			new ConfigElement("gost.laufbahnfehler.filterNurMitFachwahlen", "user", "false"),
 			new ConfigElement("gost.laufbahnfehler.filterNeuaufnahmen", "user", "false"),
+			new ConfigElement("gost.laufbahnfehler.fachanzahlHalbjahr", "user", "0"),
 		]);
 	}
 
@@ -89,6 +90,8 @@ export class RouteGostLaufbahnfehler extends RouteNode<RouteDataGostLaufbahnfehl
 			listBelegpruefungsErgebnisse: () => this.data.listBelegpruefungsErgebnisse,
 			gostBelegpruefungsArt: () => this.data.gostBelegpruefungsArt,
 			setGostBelegpruefungsArt: this.data.setGostBelegpruefungsArt,
+			fachanzahlHalbjahr: () => this.data.fachanzahlHalbjahr,
+			setFachanzahlHalbjahr: this.data.setFachanzahlHalbjahr,
 			gotoLaufbahnplanung: this.data.gotoLaufbahnplanung,
 			gotoSprachenfolge: this.data.gotoSprachenfolge,
 			importLaufbahnplanung: this.data.importLaufbahnplanung,

@@ -26,6 +26,11 @@ export class GostBelegpruefungsErgebnisse extends JavaObject {
 	public ruecklaufDatum: string | null = null;
 
 	/**
+	 * Die Anzahl der belegten Fächer je Halbjahr der gymnasialen Oberstufe.
+	 */
+	public fachanzahlHalbjahre: Array<number> = Array(6).fill(0);
+
+	/**
 	 * Die zugehörigen Belegprüfungsergebnisse
 	 */
 	public ergebnis: GostBelegpruefungErgebnis = new GostBelegpruefungErgebnis();
@@ -59,6 +64,7 @@ export class GostBelegpruefungsErgebnisse extends JavaObject {
 		result.hatFachwahlen = obj.hatFachwahlen;
 		result.beratungsDatum = (obj.beratungsDatum === undefined) ? null : obj.beratungsDatum === null ? null : obj.beratungsDatum;
 		result.ruecklaufDatum = (obj.ruecklaufDatum === undefined) ? null : obj.ruecklaufDatum === null ? null : obj.ruecklaufDatum;
+		result.fachanzahlHalbjahre = (obj.fachanzahlHalbjahre === undefined) ? Array(6).fill(0) : obj.fachanzahlHalbjahre;
 		if (obj.ergebnis === undefined)
 			throw new Error('invalid json format, missing attribute ergebnis');
 		result.ergebnis = GostBelegpruefungErgebnis.transpilerFromJSON(JSON.stringify(obj.ergebnis));
@@ -71,6 +77,7 @@ export class GostBelegpruefungsErgebnisse extends JavaObject {
 		result += '"hatFachwahlen" : ' + obj.hatFachwahlen.toString() + ',';
 		result += '"beratungsDatum" : ' + ((obj.beratungsDatum === null) ? 'null' : JSON.stringify(obj.beratungsDatum)) + ',';
 		result += '"ruecklaufDatum" : ' + ((obj.ruecklaufDatum === null) ? 'null' : JSON.stringify(obj.ruecklaufDatum)) + ',';
+		result += '"fachanzahlHalbjahre" : ' + JSON.stringify(obj.fachanzahlHalbjahre) + ',';
 		result += '"ergebnis" : ' + GostBelegpruefungErgebnis.transpilerToJSON(obj.ergebnis) + ',';
 		result = result.slice(0, -1);
 		result += '}';
@@ -90,6 +97,9 @@ export class GostBelegpruefungsErgebnisse extends JavaObject {
 		}
 		if (obj.ruecklaufDatum !== undefined) {
 			result += '"ruecklaufDatum" : ' + ((obj.ruecklaufDatum === null) ? 'null' : JSON.stringify(obj.ruecklaufDatum)) + ',';
+		}
+		if (obj.fachanzahlHalbjahre !== undefined) {
+			result += '"fachanzahlHalbjahre" : ' + JSON.stringify(obj.fachanzahlHalbjahre) + ',';
 		}
 		if (obj.ergebnis !== undefined) {
 			result += '"ergebnis" : ' + GostBelegpruefungErgebnis.transpilerToJSON(obj.ergebnis) + ',';
