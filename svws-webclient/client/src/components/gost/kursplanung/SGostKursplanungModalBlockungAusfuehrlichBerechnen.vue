@@ -114,6 +114,7 @@
 
 	const props = defineProps<{
 		getDatenmanager: () => GostBlockungsdatenManager;
+		getErgebnismanager: () => GostBlockungsergebnisManager;
 		addErgebnisse: (ergebnisse: List<GostBlockungsergebnis>) => Promise<void>;
 		ausfuehrlicheDarstellungKursdifferenz: () => boolean;
 		setAusfuehrlicheDarstellungKursdifferenz: (value: boolean) => void;
@@ -138,7 +139,7 @@
 			selected.value = [];
 		}
 		if (neu === true) {
-			workerManager.value = new WorkerManagerKursblockung(props.getDatenmanager(), toRaw(props.mapCoreTypeData()));
+			workerManager.value = new WorkerManagerKursblockung(props.getDatenmanager(), toRaw(props.mapCoreTypeData()), props.getErgebnismanager());
 		}
 	});
 

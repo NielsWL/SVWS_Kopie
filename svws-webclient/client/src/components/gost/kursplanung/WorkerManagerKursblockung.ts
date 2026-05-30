@@ -1,6 +1,6 @@
 import { shallowRef } from "vue";
-import type { GostBlockungsdatenManager, List } from "@core";
-import { ArrayList, DeveloperNotificationException, GostBlockungsdaten, GostBlockungsergebnis, GostFach, GostBlockungsergebnisComparator, GostBlockungsergebnisManager, KursblockungAlgorithmusPermanent } from "@core";
+import type { List } from "@core";
+import { ArrayList, DeveloperNotificationException, GostBlockungsdaten, GostBlockungsergebnis, GostFach, GostBlockungRegel, GostKursblockungRegelTyp, GostBlockungsergebnisComparator, GostBlockungsergebnisManager, GostBlockungsdatenManager, KursblockungAlgorithmusPermanent } from "@core";
 import type { WorkerKursblockungErrorMessage, WorkerKursblockungMessageType, WorkerKursblockungReplyErgebnisse, WorkerKursblockungReplyInit, WorkerKursblockungReplyNext,
 	WorkerKursblockungRequestErgebnisse, WorkerKursblockungRequestInit, WorkerKursblockungRequestNext } from "./WorkerKursblockungMessageTypes";
 
@@ -64,16 +64,64 @@ export class WorkerManagerKursblockung {
 	protected mapCoreTypeData: Map<string, any> = new Map();
 
 
+
+	/**
+	 * Erstellt eine Kopie der Blockungsdaten, in der für Q2.1 automatisch die aktuellen
+	 * AB3/AB4-Kurszuordnungen des aktiven Ergebnisses als Definitionsregeln ergänzt sind.
+	 * Diese Regeln werden nur für die Berechnung verwendet und nicht in der Oberfläche persistiert.
+	 *
+	 * @param datenManager              der Blockungs-Datenmanager mit den aktuellen Blockungsdaten
+	 * @param ursprungsErgebnisManager  der Ergebnismanager des Ursprungsergebnisses für automatisch ergänzte Q2.1-Regeln
+	 *
+	 * @returns einen Datenmanager mit den automatisch ergänzten Q2.1-Regeln
+	 */
+	protected static createBlockungsdatenMitAutomatischenQ21Regeln(datenManager: GostBlockungsdatenManager, ursprungsErgebnisManager?: GostBlockungsergebnisManager): GostBlockungsdatenManager {
+		const blockung = GostBlockungsdaten.transpilerFromJSON(GostBlockungsdaten.transpilerToJSON(datenManager.daten()));
+		if (blockung.gostHalbjahr !== 4) {
+			return new GostBlockungsdatenManager(blockung, datenManager.faecherManager());
+		}
+		let ergebnisManager = ursprungsErgebnisManager;
+		if (ergebnisManager === undefined) {
+			for (const ergebnis of datenManager.ergebnisGetListeSortiertNachID()) {
+				if (ergebnis.istAktiv) {
+					ergebnisManager = new GostBlockungsergebnisManager(datenManager, ergebnis);
+					break;
+				}
+			}
+		}
+		if (ergebnisManager === undefined) {
+			return new GostBlockungsdatenManager(blockung, datenManager.faecherManager());
+		}
+		const regelnOhneAutomatischeQ21Definitionen = new ArrayList<GostBlockungRegel>();
+		for (const regel of blockung.regeln) {
+			if (regel.typ !== GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS.typ) {
+				regelnOhneAutomatischeQ21Definitionen.add(regel);
+			}
+		}
+		blockung.regeln.clear();
+		blockung.regeln.addAll(regelnOhneAutomatischeQ21Definitionen);
+		const regelUpdate = ergebnisManager.regelupdateCreate_20_SCHUELER_DEFINIERE_ABITURFACH_IN_KURS_AKTUELLE_ZUORDNUNG();
+		for (const regel of regelUpdate.listHinzuzufuegen) {
+			const regelKopie = new GostBlockungRegel();
+			regelKopie.id = Number.MIN_SAFE_INTEGER + blockung.regeln.size();
+			regelKopie.typ = regel.typ;
+			regelKopie.parameter.addAll(regel.parameter);
+			blockung.regeln.add(regelKopie);
+		}
+		return new GostBlockungsdatenManager(blockung, datenManager.faecherManager());
+	}
+
 	/**
 	 * Erzeugt einen neuen nicht initialisierten Worker-Manager zur Berechnung von Kursblockungsergebnissen.
 	 *
 	 * @param datenManager      der Blockungs-Datenmanager mit der Fächerliste des Abiturjahrgangs und den Blockungsdaten
-	 * @param mapCoreTypeData   die Core-Type-Daten zum Initialisieren der Core-Types in den Worker-Threads
+	 * @param mapCoreTypeData           die Core-Type-Daten zum Initialisieren der Core-Types in den Worker-Threads
+	 * @param ursprungsErgebnisManager  der Ergebnismanager des Ursprungsergebnisses für automatisch ergänzte Q2.1-Regeln
 	 */
-	public constructor(datenManager: GostBlockungsdatenManager, mapCoreTypeData: Map<string, any>) {
+	public constructor(datenManager: GostBlockungsdatenManager, mapCoreTypeData: Map<string, any>, ursprungsErgebnisManager?: GostBlockungsergebnisManager) {
 		this.faecherListe = datenManager.faecherManager().faecher();
-		this.blockung = datenManager.daten();
-		this.datenManager = datenManager;
+		this.blockung = WorkerManagerKursblockung.createBlockungsdatenMitAutomatischenQ21Regeln(datenManager, ursprungsErgebnisManager).daten();
+		this.datenManager = new GostBlockungsdatenManager(this.blockung, datenManager.faecherManager());
 		// Teste, ob der Algorithmus überhaupt mit den aktuellen Regeln möglich ist
 		new KursblockungAlgorithmusPermanent(this.datenManager);
 		this.usedWorkerThreads.value = 1;

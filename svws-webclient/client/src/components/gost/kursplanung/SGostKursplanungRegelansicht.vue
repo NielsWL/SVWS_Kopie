@@ -143,7 +143,7 @@
 			<template #regelEdit>
 				<template v-if="regel !== undefined">
 					<div class="svws-ui-td" role="cell"> AB3 </div>
-					<svws-ui-input-number placeholder="maximale Anzahl" v-model="regelParameterAnzahlSuS" :min="0" :max="999" />
+					<svws-ui-input-number placeholder="maximale Anzahl" v-model="regelParameterMaxKurswechselAB3" :min="0" :max="999" />
 				</template>
 			</template>
 		</BlockungsregelBase>
@@ -701,6 +701,21 @@
 		set: (value) => {
 			if (regel.value !== undefined) {
 				regel.value.parameter.set(1, value);
+			}
+		},
+	});
+
+
+	const regelParameterMaxKurswechselAB3 = computed<number>({
+		get: () => {
+			if (regel.value === undefined) {
+				return 0;
+			}
+			return regel.value.parameter.get(0);
+		},
+		set: (value) => {
+			if (regel.value !== undefined) {
+				regel.value.parameter.set(0, value);
 			}
 		},
 	});
