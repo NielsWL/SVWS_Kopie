@@ -17,6 +17,7 @@
 		<div class="min-w-160 h-full flex flex-col gap-y-6">
 			<div class="flex flex-row items-center justify-between">
 				<div class="flex flex-col gap-y-1">
+					<svws-ui-select title="Fächer zählen" :model-value="fachanzahlHalbjahr()" :items="halbjahre" :item-text="getHalbjahrKuerzel" @update:model-value="updateFachanzahlHalbjahr" />
 					<svws-ui-checkbox type="toggle" :model-value="filterFehler()" @update:model-value="setFilterFehler">Nur Fehler</svws-ui-checkbox>
 					<svws-ui-checkbox type="toggle" :model-value="filterExterne()" @update:model-value="setFilterExterne">Externe ausblenden</svws-ui-checkbox>
 					<svws-ui-checkbox type="toggle" :model-value="filterNurMitFachwahlen()" @update:model-value="setFilterNurMitFachwahlen">Nur mit Fachwahlen</svws-ui-checkbox>
@@ -59,6 +60,9 @@
 				</template>
 				<template #cell(hinweise)="cell">
 					<span v-if="counterAnzahlOderWochenstunden(cell.rowData.ergebnis.fehlercodes) > 0" class="opacity-75 -my-0.5"><span class="icon i-ri-information-line" /></span>
+				</template>
+				<template #cell(fachanzahl)="{ rowData }">
+					{{ getFachanzahl(rowData) }}
 				</template>
 				<template #cell(ergebnis)="{rowData}">
 					<span v-if="!rowData.hatFachwahlen">
@@ -115,7 +119,7 @@
 	import type { GostLaufbahnfehlerProps } from "./SGostLaufbahnfehlerProps";
 	import { useAbschnittState, useRegionSwitch, useServerState, type DataTableColumn, type SortByAndOrder } from '@ui';
 	import type { List, GostBelegpruefungErgebnisFehler } from '@core';
-	import { ArrayList, GostBelegpruefungsArt, GostBelegungsfehlerArt, SchuelerStatus, GostBelegpruefungsErgebnisse, BenutzerKompetenz, ReportingAusgabeformat, ReportingReportvorlage, ServerMode } from '@core';
+	import { ArrayList, GostBelegpruefungsArt, GostBelegungsfehlerArt, SchuelerStatus, GostBelegpruefungsErgebnisse, BenutzerKompetenz, ReportingAusgabeformat, ReportingReportvorlage, ServerMode, GostHalbjahr } from '@core';
 
 	const props = defineProps<GostLaufbahnfehlerProps>();
 	const serverState = useServerState();
@@ -138,9 +142,11 @@
 		{ key: 'beratung', labe: 'Beratung', fixedWidth: 5.5, align: "center", sortable: true },
 		{ key: 'ruecklauf', labe: 'Rücklauf', fixedWidth: 5.5, align: "center", sortable: true },
 		{ key: 'hinweise', label: 'K/WS', tooltip: 'Gibt an, ob Hinweise zu der Anzahl von Kursen oder Wochenstunden vorliegen', fixedWidth: 3.5, align: 'center' },
+		{ key: 'fachanzahl', label: 'Fächer', tooltip: 'Anzahl der belegten Fächer im ausgewählten Halbjahr', fixedWidth: 3.75, align: 'right', sortable: true },
 		{ key: 'ergebnis', label: 'Fehler', tooltip: 'Anzahl der Fehler insgesamt', fixedWidth: 3.5, align: 'right', sortable: true },
 	];
 	const sortByAndOrder = ref<SortByAndOrder | undefined>();
+	const halbjahre = GostHalbjahr.values();
 
 	const dataSorted = computed(() => {
 		const temp = sortByAndOrder.value;
@@ -156,6 +162,10 @@
 					return a.beratungsDatum?.localeCompare(b.beratungsDatum ?? '', "de-DE") ?? 0;
 				case 'ruecklauf':
 					return a.ruecklaufDatum?.localeCompare(b.ruecklaufDatum ?? '', "de-DE") ?? 0;
+				case 'fachanzahl':
+					return getFachanzahl(a) - getFachanzahl(b);
+				case 'ergebnis':
+					return counter(a.ergebnis.fehlercodes) - counter(b.ergebnis.fehlercodes);
 				default:
 					return 0;
 			}
@@ -233,6 +243,20 @@
 			void props.setGostBelegpruefungsArt(value === 'ef1' ? GostBelegpruefungsArt.EF1 : GostBelegpruefungsArt.GESAMT);
 		},
 	});
+
+	function getHalbjahrKuerzel(halbjahr: GostHalbjahr): string {
+		return halbjahr.kuerzel;
+	}
+
+	function updateFachanzahlHalbjahr(halbjahr: GostHalbjahr | null | undefined): void {
+		if ((halbjahr !== null) && (halbjahr !== undefined)) {
+			void props.setFachanzahlHalbjahr(halbjahr);
+		}
+	}
+
+	function getFachanzahl(ergebnis: GostBelegpruefungsErgebnisse): number {
+		return ergebnis.fachanzahlHalbjahre[props.fachanzahlHalbjahr().id] ?? 0;
+	}
 
 	function counter(fehlercodes: List<GostBelegpruefungErgebnisFehler> | undefined): number {
 		if (fehlercodes === undefined) {

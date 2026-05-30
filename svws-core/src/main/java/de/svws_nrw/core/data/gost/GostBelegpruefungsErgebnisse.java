@@ -3,6 +3,7 @@ package de.svws_nrw.core.data.gost;
 import de.svws_nrw.asd.data.schueler.Schueler;
 import de.svws_nrw.core.abschluss.gost.GostBelegpruefungErgebnis;
 import de.svws_nrw.transpiler.TranspilerDTO;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.xml.bind.annotation.XmlRootElement;
@@ -32,6 +33,11 @@ public class GostBelegpruefungsErgebnisse {
 	/** Gibt an, ob und wann für den Schüler zuletzt ein Import der Laufbahnplanungsdaten stattgefunden hat. */
 	@Schema(description = "gibt an, ob und wann für den Schüler zuletzt ein Import der Laufbahnplanungsdaten stattgefunden hat", example = "01.02.2042")
 	public String ruecklaufDatum = null;
+
+	/** Die Anzahl der belegten Fächer je Halbjahr der gymnasialen Oberstufe. */
+	@ArraySchema(schema = @Schema(implementation = Integer.class,
+			description = "Die Anzahl der belegten Fächer je Halbjahr der gymnasialen Oberstufe."))
+	public int[] fachanzahlHalbjahre = new int[6];
 
 	/** Die zugehörigen Belegprüfungsergebnisse */
 	@Schema(implementation = GostBelegpruefungErgebnis.class)

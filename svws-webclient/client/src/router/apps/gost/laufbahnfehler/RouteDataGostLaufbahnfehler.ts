@@ -1,5 +1,5 @@
 import type { ApiFile, GostBelegpruefungsErgebnisse, List, ReportingParameter } from "@core";
-import { ArrayList, DeveloperNotificationException, GostBelegpruefungsArt } from "@core";
+import { ArrayList, DeveloperNotificationException, GostBelegpruefungsArt, GostHalbjahr } from "@core";
 
 import { api } from "~/router/Api";
 import { RouteManager } from "~/router/RouteManager";
@@ -42,6 +42,15 @@ export class RouteDataGostLaufbahnfehler extends RouteData<RouteStateDataGostLau
 	get filterFehler(): boolean {
 		return api.config.getValue('gost.laufbahnfehler.filterFehler') === 'true';
 	}
+
+	get fachanzahlHalbjahr(): GostHalbjahr {
+		const halbjahrId = Number.parseInt(api.config.getValue('gost.laufbahnfehler.fachanzahlHalbjahr'));
+		return GostHalbjahr.fromID(Number.isNaN(halbjahrId) ? 0 : halbjahrId) ?? GostHalbjahr.EF1;
+	}
+
+	setFachanzahlHalbjahr = async (value: GostHalbjahr) => {
+		await api.config.setValue('gost.laufbahnfehler.fachanzahlHalbjahr', value.id.toString());
+	};
 
 	setFilterFehler = async (value: boolean) => {
 		await api.config.setValue('gost.laufbahnfehler.filterFehler', value ? "true" : "false");

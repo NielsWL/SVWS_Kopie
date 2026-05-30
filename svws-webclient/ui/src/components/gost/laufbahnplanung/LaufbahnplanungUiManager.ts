@@ -66,6 +66,9 @@ export class LaufbahnplanungUiManager {
 	/** Gibt an, ob bei den einzelnen Fachbelegungen immer Noten bei den Leistungsdaten angenommen werden sollen */
 	private readonly _belegungHatImmerNoten: boolean = false;
 
+	/** Computed Property: Ein Array mit der Anzahl von belegten Fächern in den einzelnen Halbjahren */
+	private readonly _fachanzahl = computed<number[]>(() => GostHalbjahr.values().map(hj => this.manager().zaehleBelegungInHalbjahren(this.manager().daten().fachbelegungen, hj)));
+
 	/** Computed Property: Ein Array mit der Anzahl von anrechenbaren Kursen in den einzelnen Halbjahren */
 	private readonly _anrechenbareKurse = computed<number[]>(() => this.manager().getAnrechenbareKurse());
 
@@ -175,6 +178,13 @@ export class LaufbahnplanungUiManager {
 		return (this.aktuellesHalbjahr !== null) && (this.aktuellesHalbjahr.id >= halbjahr.id);
 	}
 
+
+	/**
+	 * Gibt die Anzahl der belegten Fächer für das übergebene Halbjahr zurück.
+	 */
+	public getFachanzahl(hj: GostHalbjahr): number {
+		return this._fachanzahl.value[hj.id];
+	}
 
 	/**
 	 * Gibt den Text für den Tooltip der anrechenbaren Kurse zurück.
