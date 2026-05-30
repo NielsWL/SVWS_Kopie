@@ -110,10 +110,6 @@ public final class KursblockungAlgorithmusPermanent {
 			// Lädt beim Algorithmus den besten Zustand. Einige Algorithmen verteilen hier erst die SuS.
 			algorithmenK[iK].ladeBestMitSchuelerverteilung();
 
-			if (!algorithmenK[iK].dynDaten.gibErfuelltMaxKurswechselAB3()) {
-				continue;
-			}
-
 			// Sortiert einfügen.
 			boolean eingefuegt = false;
 			for (int i = 0; (i < topErgebnisse.size()) && (!eingefuegt); i++) {

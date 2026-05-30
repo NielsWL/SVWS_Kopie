@@ -4447,6 +4447,41 @@ export class GostBlockungsergebnisManager extends JavaObject {
 	}
 
 	/**
+	 * Liefert alle nötigen Veränderungen, um eine AB3/AB4-Schüler-Kurs-Zuordnung als Definitionsregel festzuhalten.
+	 *
+	 * @param idSchueler  Die ID des Schülers.
+	 * @param idKurs      Die ID des Kurses.
+	 * @param abiturfach  Die Abiturfach-Nummer (3 oder 4).
+	 *
+	 * @return alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt
+	 */
+	public regelupdateCreate_20_SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(idSchueler: number, idKurs: number, abiturfach: number): GostBlockungRegelUpdate {
+		const u: GostBlockungRegelUpdate = new GostBlockungRegelUpdate();
+		u.listHinzuzufuegen.add(DTOUtils.newGostBlockungRegel3(GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS.typ, idSchueler, idKurs, abiturfach));
+		return u;
+	}
+
+	/**
+	 * Liefert alle nötigen Veränderungen, um die aktuellen AB3/AB4-Schüler-Kurs-Zuordnungen als Definitionsregeln festzuhalten.
+	 * Bestehende Definitionsregeln werden vorher entfernt, damit die Bezugsbasis eindeutig ist.
+	 *
+	 * @return alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt
+	 */
+	public regelupdateCreate_20_SCHUELER_DEFINIERE_ABITURFACH_IN_KURS_AKTUELLE_ZUORDNUNG(): GostBlockungRegelUpdate {
+		const u: GostBlockungRegelUpdate = new GostBlockungRegelUpdate();
+		for (const r20 of this.parent.regelGetListeOfTyp(GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS))
+			u.listEntfernen.add(r20);
+		for (const idKurs of this.kursIDs) {
+			for (const idSchueler of this.getOfKursSchuelerIDmenge(idKurs)) {
+				const abiturfach: number = this.getOfSchuelerOfKursAbiturfach(idSchueler, idKurs);
+				if ((abiturfach === 3) || (abiturfach === 4))
+					u.listHinzuzufuegen.add(DTOUtils.newGostBlockungRegel3(GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS.typ, idSchueler, idKurs, abiturfach));
+			}
+		}
+		return u;
+	}
+
+	/**
 	 * Liefert alle nötigen Veränderungen als {@link GostBlockungRegelUpdate}-Objekt, um alle Regeln einer Schülermenge zu entfernen.
 	 *
 	 * @param setSchuelerID  Die Menge der Schüler-IDs.

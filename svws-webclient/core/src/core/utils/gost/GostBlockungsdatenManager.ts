@@ -1924,6 +1924,12 @@ export class GostBlockungsdatenManager extends JavaObject {
 				}
 				break;
 			}
+			case GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS: {
+				if ((p.get(2) !== 3) && (p.get(2) !== 4)) {
+					return this.toStringRegel(r.id) + " SCHUELER_DEFINIERE_ABITURFACH_IN_KURS muss AB3 oder AB4 definieren!";
+				}
+				break;
+			}
 			default: {
 				return this.toStringRegel(r.id) + " Regeltypüberprüfung: Der Regeltyp ist unbekannt!";
 			}

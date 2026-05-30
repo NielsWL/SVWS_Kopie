@@ -3,7 +3,6 @@ import { HashMap2D } from '../../core/adt/map/HashMap2D';
 import { GostBlockungsergebnisManager } from '../../core/utils/gost/GostBlockungsergebnisManager';
 import { KursblockungDynFachart } from '../../core/kursblockung/KursblockungDynFachart';
 import { GostBlockungsergebnisKursSchuelerZuordnung } from '../../core/data/gost/GostBlockungsergebnisKursSchuelerZuordnung';
-import { GostBlockungsergebnisKurs } from '../../core/data/gost/GostBlockungsergebnisKurs';
 import type { JavaSet } from '../../java/util/JavaSet';
 import { KursblockungStatic } from '../../core/kursblockung/KursblockungStatic';
 import { StringBuilder } from '../../java/lang/StringBuilder';
@@ -110,14 +109,9 @@ export class KursblockungDynDaten extends JavaObject {
 	private readonly statistik: KursblockungDynStatistik;
 
 	/**
-	 * Maximale Anzahl erlaubter AB3-Kurswechsel gegenüber dem aktiven Ergebnis, oder Number.MAX_SAFE_INTEGER ohne Begrenzung.
+	 * Maximale Anzahl erlaubter AB3-Kurswechsel gegenüber expliziten AB3-Definitionsregeln, oder Number.MAX_SAFE_INTEGER ohne Begrenzung.
 	 */
 	private regel19MaxKurswechselAB3: number = 0;
-
-	/**
-	 * Merkt sich für AB3-Fachwahlen die Kurs-ID aus dem aktiven Ergebnis. Key: Schüler-ID, Fach-ID.
-	 */
-	private readonly regel19AB3KursVorBlockung: HashMap<LongArrayKey, number>;
 
 
 	/**
@@ -143,7 +137,6 @@ export class KursblockungDynDaten extends JavaObject {
 		this.schuelerMap = new HashMap();
 		this.statistik = new KursblockungDynStatistik(this.log);
 		this.regel19MaxKurswechselAB3 = Number.MAX_SAFE_INTEGER;
-		this.regel19AB3KursVorBlockung = new HashMap();
 		this.fehlerBeiReferenzen(input);
 		this.fehlerBeiRegelGruppierung(input.daten().regeln);
 		this.fehlerBeiSchuelerErstellung(input);
@@ -162,7 +155,7 @@ export class KursblockungDynDaten extends JavaObject {
 		this.fehlerBeiRegel15();
 		this.fehlerBeiRegel16();
 		this.fehlerBeiRegel18();
-		this.fehlerBeiRegel19(input);
+		this.fehlerBeiRegel19();
 		this.aktionZustandSpeichernS();
 		this.aktionZustandSpeichernK();
 		this.aktionZustandSpeichernG();
@@ -311,6 +304,10 @@ export class KursblockungDynDaten extends JavaObject {
 				}
 				case GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL: {
 					KursblockungDynDaten.fehlerBeiReferenzenRegeltyp19(daten);
+					break;
+				}
+				case GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS: {
+					KursblockungDynDaten.fehlerBeiReferenzenRegeltyp20(daten, setSchueler, setKurse);
 					break;
 				}
 				default: {
@@ -483,6 +480,16 @@ export class KursblockungDynDaten extends JavaObject {
 		const maximum: number = daten[0];
 		DeveloperNotificationException.ifSmaller(JavaString.format("KURSWECHSEL_AB3_MAXIMALE_ANZAHL(%d): Anzahl ist zu klein!", maximum), maximum, GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MIN);
 		DeveloperNotificationException.ifGreater(JavaString.format("KURSWECHSEL_AB3_MAXIMALE_ANZAHL(%d): Anzahl ist zu groß!", maximum), maximum, GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MAX);
+	}
+
+	private static fehlerBeiReferenzenRegeltyp20(daten: Array<number>, setSchueler: HashSet<number>, setKurse: HashSet<number>): void {
+		KursblockungDynDaten.ueberpruefeDatenLaenge("SCHUELER_DEFINIERE_ABITURFACH_IN_KURS", daten, 3);
+		const schuelerID: number = daten[0].valueOf();
+		const kursID: number = daten[1].valueOf();
+		const abiturfach: number = daten[2];
+		DeveloperNotificationException.ifSetNotContains(JavaString.format("SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(%d, %d, %d): Schüler-ID nicht vorhanden!", schuelerID, kursID, abiturfach), setSchueler, schuelerID);
+		DeveloperNotificationException.ifSetNotContains(JavaString.format("SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(%d, %d, %d): Kurs-ID nicht vorhanden!", schuelerID, kursID, abiturfach), setKurse, kursID);
+		DeveloperNotificationException.ifTrue(JavaString.format("SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(%d, %d, %d): Abiturfach muss 3 oder 4 sein!", schuelerID, kursID, abiturfach), (abiturfach !== 3) && (abiturfach !== 4));
 	}
 
 	private fehlerBeiRegelGruppierung(pRegeln: List<GostBlockungRegel>): void {
@@ -881,26 +888,30 @@ export class KursblockungDynDaten extends JavaObject {
 		}
 	}
 
-	private fehlerBeiRegel19(input: GostBlockungsdatenManager): void {
+	private fehlerBeiRegel19(): void {
 		for (const r19 of MapUtils.getOrCreateArrayList(this.regelMap, GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL))
 			this.regel19MaxKurswechselAB3 = Math.min(this.regel19MaxKurswechselAB3, r19.parameter.get(0));
 		if (this.regel19MaxKurswechselAB3 === Number.MAX_SAFE_INTEGER)
 			return;
-		let aktivesErgebnis: GostBlockungsergebnisManager | null = null;
-		for (const ergebnis of input.ergebnisGetListeSortiertNachID()) {
-			if (ergebnis.istAktiv) {
-				aktivesErgebnis = input.ergebnisManagerGet(ergebnis.id);
-				break;
-			}
+		const ab3Definitionen: ArrayList<GostBlockungRegel> = new ArrayList();
+		for (const r20 of MapUtils.getOrCreateArrayList(this.regelMap, GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS))
+			if (r20.parameter.get(2) === 3)
+				ab3Definitionen.add(r20);
+		const perm: Array<number> = KursblockungStatic.gibPermutation(this.rnd, ab3Definitionen.size());
+		for (let i: number = this.regel19MaxKurswechselAB3; i < ab3Definitionen.size(); i++) {
+			const definition: GostBlockungRegel = ab3Definitionen.get(perm[i]);
+			this.setzeSchuelerFixierungInKurs(definition.parameter.get(0), definition.parameter.get(1));
 		}
-		if (aktivesErgebnis === null)
-			return;
-		for (const fachwahl of input.daten().fachwahlen) {
-			if ((fachwahl.abiturfach === null) || (fachwahl.abiturfach !== 3))
-				continue;
-			const kurs: GostBlockungsergebnisKurs | null = aktivesErgebnis.getOfSchuelerOfFachZugeordneterKurs(fachwahl.schuelerID, fachwahl.fachID);
-			if (kurs !== null)
-				this.regel19AB3KursVorBlockung.put(new LongArrayKey(fachwahl.schuelerID, fachwahl.fachID), kurs.id);
+	}
+
+	private setzeSchuelerFixierungInKurs(schuelerID: number, kursID: number): void {
+		const schueler: KursblockungDynSchueler = this.gibSchueler(schuelerID);
+		const fixierterKurs: KursblockungDynKurs = this.gibKurs(kursID);
+		for (const kurs of fixierterKurs.gibFachart().gibKurse()) {
+			if (kurs === fixierterKurs)
+				kurs.setzeSchuelerFixierung(schueler.internalSchuelerID);
+			else
+				schueler.aktionSetzeKursSperrung(kurs.gibInternalID());
 		}
 	}
 
@@ -914,30 +925,6 @@ export class KursblockungDynDaten extends JavaObject {
 
 	private gibKurs(kursID: number): KursblockungDynKurs {
 		return DeveloperNotificationException.ifMapGetIsNull(this.kursMap, kursID);
-	}
-
-	public gibAnzahlKurswechselAB3(): number {
-		if (this.regel19AB3KursVorBlockung.isEmpty())
-			return 0;
-		let anzahl: number = 0;
-		for (const schueler of this.schuelerMenge) {
-			const idSchueler: number = schueler.gibDatenbankID();
-			const facharten: Array<KursblockungDynFachart> = schueler.gibFacharten();
-			const kurse: Array<KursblockungDynKurs | null> = schueler.gibKurswahlen();
-			for (let i: number = 0; i < facharten.length; i++) {
-				const idKursAlt: number | null = this.regel19AB3KursVorBlockung.get(new LongArrayKey(idSchueler, facharten[i].gibFach().id));
-				if (idKursAlt === null)
-					continue;
-				const kursNeu: KursblockungDynKurs | null = kurse[i];
-				if ((kursNeu === null) || (kursNeu.gibDatenbankID() !== idKursAlt))
-					anzahl++;
-			}
-		}
-		return anzahl;
-	}
-
-	public gibErfuelltMaxKurswechselAB3(): boolean {
-		return this.gibAnzahlKurswechselAB3() <= this.regel19MaxKurswechselAB3;
 	}
 
 	/**

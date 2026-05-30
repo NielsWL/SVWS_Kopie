@@ -2011,6 +2011,12 @@ public class GostBlockungsdatenManager {
 				}
 				break;
 
+			case SCHUELER_DEFINIERE_ABITURFACH_IN_KURS:  // 20
+				if ((p.get(2) != 3) && (p.get(2) != 4)) {
+					return toStringRegel(r.id) + " SCHUELER_DEFINIERE_ABITURFACH_IN_KURS muss AB3 oder AB4 definieren!";
+				}
+				break;
+
 			default:
 				return toStringRegel(r.id) + " Regeltypüberprüfung: Der Regeltyp ist unbekannt!";
 		}

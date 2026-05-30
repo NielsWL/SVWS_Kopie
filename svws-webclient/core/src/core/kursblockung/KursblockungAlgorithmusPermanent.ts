@@ -104,8 +104,6 @@ export class KursblockungAlgorithmusPermanent extends JavaObject {
 		let verbesserungen: number = 0;
 		for (let iK: number = 0; iK < this.algorithmenK.length; iK++) {
 			this.algorithmenK[iK].ladeBestMitSchuelerverteilung();
-			if (!this.algorithmenK[iK].dynDaten.gibErfuelltMaxKurswechselAB3())
-				continue;
 			let eingefuegt: boolean = false;
 			for (let i: number = 0; (i < this.topErgebnisse.size()) && (!eingefuegt); i++) {
 				if (this.algorithmenK[iK].dynDaten.gibIstBesserAls1NW2KD3FW(this.topErgebnisse.get(i))) {

@@ -80,8 +80,6 @@ export class KursblockungAlgorithmus extends Service {
 		if (dynDaten.gibCompareZustandG1NW2KD3FW() > 0) {
 			dynDaten.aktionZustandSpeichernG();
 		}
-		if (!dynDaten.gibErfuelltMaxKurswechselAB3())
-			return;
 		const out: GostBlockungsergebnisManager = dynDaten.gibErzeugtesKursblockungOutput(pInput, outputs.size() + 1);
 		outputs.add(out);
 	}

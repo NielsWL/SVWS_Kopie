@@ -1,6 +1,7 @@
 package de.svws_nrw.core.kursblockung;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,8 +25,6 @@ import de.svws_nrw.core.data.gost.GostBlockungsergebnisKursSchienenZuordnung;
 import de.svws_nrw.core.data.gost.GostBlockungsergebnisKursSchienenZuordnungUpdate;
 import de.svws_nrw.core.data.gost.GostBlockungsergebnisKursSchuelerZuordnung;
 import de.svws_nrw.core.data.gost.GostBlockungsergebnisKursSchuelerZuordnungUpdate;
-import de.svws_nrw.core.data.gost.GostBlockungsergebnis;
-import de.svws_nrw.core.data.gost.GostBlockungsergebnisKurs;
 import de.svws_nrw.core.data.gost.GostFach;
 import de.svws_nrw.core.data.gost.GostFachwahl;
 import de.svws_nrw.core.exceptions.DeveloperNotificationException;
@@ -88,11 +87,8 @@ public class KursblockungDynDaten {
 	/** Das Statistik-Objekt speichert die aktuellen Nichtwahlen, Kursdifferenzen und weitere Daten. */
 	private final @NotNull KursblockungDynStatistik statistik;
 
-	/** Maximale Anzahl erlaubter AB3-Kurswechsel gegenüber dem aktiven Ergebnis, oder {@link Integer#MAX_VALUE} ohne Begrenzung. */
+	/** Maximale Anzahl erlaubter AB3-Kurswechsel gegenüber expliziten AB3-Definitionsregeln, oder {@link Integer#MAX_VALUE} ohne Begrenzung. */
 	private int regel19MaxKurswechselAB3;
-
-	/** Merkt sich für AB3-Fachwahlen die Kurs-ID aus dem aktiven Ergebnis. Key: Schüler-ID, Fach-ID. */
-	private final @NotNull HashMap<LongArrayKey, Long> regel19AB3KursVorBlockung;
 
 	/**
 	 * Der Konstruktor der Klasse liest alle Daten von {@link GostBlockungsdatenManager} ein und baut die relevanten Datenstrukturen auf.
@@ -121,7 +117,6 @@ public class KursblockungDynDaten {
 
 		statistik = new KursblockungDynStatistik(log);
 		regel19MaxKurswechselAB3 = Integer.MAX_VALUE;
-		regel19AB3KursVorBlockung = new HashMap<>();
 
 		// Definiert: ---
 		fehlerBeiReferenzen(input);
@@ -172,7 +167,7 @@ public class KursblockungDynDaten {
 
 		fehlerBeiRegel18();
 
-		fehlerBeiRegel19(input);
+		fehlerBeiRegel19();
 
 		// Zustände Speichern
 		aktionZustandSpeichernS();
@@ -360,6 +355,9 @@ public class KursblockungDynDaten {
 					break;
 				case KURSWECHSEL_AB3_MAXIMALE_ANZAHL:
 					fehlerBeiReferenzenRegeltyp19(daten);
+					break;
+				case SCHUELER_DEFINIERE_ABITURFACH_IN_KURS:
+					fehlerBeiReferenzenRegeltyp20(daten, setSchueler, setKurse);
 					break;
 				default:
 					throw new DeveloperNotificationException("Unbekannter Regeltyp!");
@@ -720,6 +718,26 @@ public class KursblockungDynDaten {
 		DeveloperNotificationException.ifGreater(
 				"KURSWECHSEL_AB3_MAXIMALE_ANZAHL(%d): Anzahl ist zu groß!".formatted(maximum),
 				maximum, GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL_MAX);
+
+	}
+
+	private static void fehlerBeiReferenzenRegeltyp20(final @NotNull Long @NotNull [] daten, final @NotNull HashSet<Long> setSchueler,
+			final @NotNull HashSet<Long> setKurse) {
+
+		ueberpruefeDatenLaenge("SCHUELER_DEFINIERE_ABITURFACH_IN_KURS", daten, 3);
+		final long schuelerID = daten[0];
+		final long kursID = daten[1];
+		final int abiturfach = daten[2].intValue();
+
+		DeveloperNotificationException.ifSetNotContains(
+				"SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(%d, %d, %d): Schüler-ID nicht vorhanden!".formatted(schuelerID, kursID, abiturfach),
+				setSchueler, schuelerID);
+		DeveloperNotificationException.ifSetNotContains(
+				"SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(%d, %d, %d): Kurs-ID nicht vorhanden!".formatted(schuelerID, kursID, abiturfach),
+				setKurse, kursID);
+		DeveloperNotificationException.ifTrue(
+				"SCHUELER_DEFINIERE_ABITURFACH_IN_KURS(%d, %d, %d): Abiturfach muss 3 oder 4 sein!".formatted(schuelerID, kursID, abiturfach),
+				(abiturfach != 3) && (abiturfach != 4));
 
 	}
 
@@ -1274,7 +1292,7 @@ public class KursblockungDynDaten {
 		}
 	}
 
-	private void fehlerBeiRegel19(final @NotNull GostBlockungsdatenManager input) {
+	private void fehlerBeiRegel19() {
 		for (final @NotNull GostBlockungRegel r19 : MapUtils.getOrCreateArrayList(regelMap,
 				GostKursblockungRegelTyp.KURSWECHSEL_AB3_MAXIMALE_ANZAHL)) {
 			regel19MaxKurswechselAB3 = Math.min(regel19MaxKurswechselAB3, r19.parameter.get(0).intValue());
@@ -1284,25 +1302,29 @@ public class KursblockungDynDaten {
 			return;
 		}
 
-		GostBlockungsergebnisManager aktivesErgebnis = null;
-		for (final @NotNull GostBlockungsergebnis ergebnis : input.ergebnisGetListeSortiertNachID()) {
-			if (ergebnis.istAktiv) {
-				aktivesErgebnis = input.ergebnisManagerGet(ergebnis.id);
-				break;
+		final @NotNull List<GostBlockungRegel> ab3Definitionen = new ArrayList<>();
+		for (final @NotNull GostBlockungRegel r20 : MapUtils.getOrCreateArrayList(regelMap,
+				GostKursblockungRegelTyp.SCHUELER_DEFINIERE_ABITURFACH_IN_KURS)) {
+			if (r20.parameter.get(2) == 3) {
+				ab3Definitionen.add(r20);
 			}
 		}
 
-		if (aktivesErgebnis == null) {
-			return;
+		Collections.shuffle(ab3Definitionen, rnd);
+		for (int i = regel19MaxKurswechselAB3; i < ab3Definitionen.size(); i++) {
+			final @NotNull GostBlockungRegel definition = ab3Definitionen.get(i);
+			setzeSchuelerFixierungInKurs(definition.parameter.get(0), definition.parameter.get(1));
 		}
+	}
 
-		for (final @NotNull GostFachwahl fachwahl : input.daten().fachwahlen) {
-			if ((fachwahl.abiturfach == null) || (fachwahl.abiturfach != 3)) {
-				continue;
-			}
-			final GostBlockungsergebnisKurs kurs = aktivesErgebnis.getOfSchuelerOfFachZugeordneterKurs(fachwahl.schuelerID, fachwahl.fachID);
-			if (kurs != null) {
-				regel19AB3KursVorBlockung.put(new LongArrayKey(fachwahl.schuelerID, fachwahl.fachID), kurs.id);
+	private void setzeSchuelerFixierungInKurs(final long schuelerID, final long kursID) {
+		final @NotNull KursblockungDynSchueler schueler = gibSchueler(schuelerID);
+		final @NotNull KursblockungDynKurs fixierterKurs = gibKurs(kursID);
+		for (final @NotNull KursblockungDynKurs kurs : fixierterKurs.gibFachart().gibKurse()) {
+			if (kurs == fixierterKurs) {
+				kurs.setzeSchuelerFixierung(schueler.internalSchuelerID);
+			} else {
+				schueler.aktionSetzeKursSperrung(kurs.gibInternalID());
 			}
 		}
 	}
@@ -1319,42 +1341,6 @@ public class KursblockungDynDaten {
 		return DeveloperNotificationException.ifMapGetIsNull(kursMap, kursID);
 	}
 
-	/**
-	 * Liefert die Anzahl der AB3-Fachwahlen, deren Kurs gegenüber dem aktiven Ausgangsergebnis gewechselt wurde.
-	 *
-	 * @return die Anzahl der AB3-Kurswechsel
-	 */
-	int gibAnzahlKurswechselAB3() {
-		if (regel19AB3KursVorBlockung.isEmpty()) {
-			return 0;
-		}
-		int anzahl = 0;
-		for (final @NotNull KursblockungDynSchueler schueler : schuelerMenge) {
-			final long idSchueler = schueler.gibDatenbankID();
-			final @NotNull KursblockungDynFachart @NotNull [] facharten = schueler.gibFacharten();
-			final @NotNull KursblockungDynKurs[] kurse = schueler.gibKurswahlen();
-			for (int i = 0; i < facharten.length; i++) {
-				final Long idKursAlt = regel19AB3KursVorBlockung.get(new LongArrayKey(idSchueler, facharten[i].gibFach().id));
-				if (idKursAlt == null) {
-					continue;
-				}
-				final KursblockungDynKurs kursNeu = kurse[i];
-				if ((kursNeu == null) || (kursNeu.gibDatenbankID() != idKursAlt)) {
-					anzahl++;
-				}
-			}
-		}
-		return anzahl;
-	}
-
-	/**
-	 * Prüft die Begrenzung für AB3-Kurswechsel.
-	 *
-	 * @return true, falls die Begrenzung eingehalten wird
-	 */
-	boolean gibErfuelltMaxKurswechselAB3() {
-		return gibAnzahlKurswechselAB3() <= regel19MaxKurswechselAB3;
-	}
 
 	// ########################################
 	// ############## PROTECTED ###############
